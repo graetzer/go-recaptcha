@@ -25,7 +25,7 @@ var recaptcha_private_key string
 // It returns a boolean value indicating whether or not the client answered correctly.
 func check(remoteip, response string) (body []byte) {
 	vals := url.Values{"secret": recaptcha_private_key, "remoteip": remoteip, "response": response}
-	resp, err := http.PostForm(recaptcha_server_name + vals.Encode())
+	resp, err := http.Get(recaptcha_server_name + vals.Encode())
 	if err != nil {
 		log.Println("Post error: %s", err)
 	}
