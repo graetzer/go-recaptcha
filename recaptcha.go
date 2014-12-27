@@ -7,14 +7,15 @@
 package recaptcha
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
-	"strings"
 )
 
-const recaptcha_server_name = "http://www.google.com/recaptcha/api/verify"
+// https://www.google.com/recaptcha/api/siteverify?secret=your_secret&response=response_string&remoteip=user_ip_address
+const recaptcha_server_name = "https://www.google.com/recaptcha/api/siteverify?"
 
 var recaptcha_private_key string
 
@@ -22,10 +23,9 @@ var recaptcha_private_key string
 // and the client's response input to that challenge to determine whether or not
 // the client answered the reCaptcha input question correctly.
 // It returns a boolean value indicating whether or not the client answered correctly.
-func check(remoteip, challenge, response string) (s string) {
-	s = ""
-	resp, err := http.PostForm(recaptcha_server_name,
-		url.Values{"privatekey": {recaptcha_private_key}, "remoteip": {remoteip}, "challenge": {challenge}, "response": {response}})
+func check(remoteip, response string) (body []byte) {
+	vals := url.Values{"secret": recaptcha_private_key, "remoteip": remoteip, "response": response}
+	resp, err := http.PostForm(recaptcha_server_name + vals.Encode())
 	if err != nil {
 		log.Println("Post error: %s", err)
 	}
@@ -33,10 +33,13 @@ func check(remoteip, challenge, response string) (s string) {
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Println("Read error: could not read body: %s", err)
-	} else {
-		s = string(body)
 	}
 	return
+}
+
+type recaptcha_api_response struct {
+	success bool
+	errors  []string `json:"error-codes"`
 }
 
 // Confirm is the public interface function.
@@ -44,9 +47,15 @@ func check(remoteip, challenge, response string) (s string) {
 // and the client's response input to that challenge to determine whether or not
 // the client answered the reCaptcha input question correctly.
 // It returns a boolean value indicating whether or not the client answered correctly.
-func Confirm(remoteip, challenge, response string) (result bool) {
-	result = strings.HasPrefix(check(remoteip, challenge, response), "true")
-	return
+func Confirm(remoteip, response string) bool {
+	var r recaptcha_api_response
+	if err := json.Unmarshal(check(remoteip, response), &r); err != nil {
+		log.Println("JSON error:", err)
+	}
+	if len(r.errors) > 0 {
+		log.Println("Recaptcha errors:", r.errors)
+	}
+	return r.success
 }
 
 // Init allows the webserver or code evaluating the reCaptcha form input to set the
