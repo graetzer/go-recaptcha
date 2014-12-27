@@ -8,45 +8,44 @@ package main
 
 import (
 	"fmt"
+	"github.com/graetzer/go-recaptcha"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
-	"github.com/dpapathanasiou/go-recaptcha"
 )
 
 var recaptcha_public_key string
 
 const (
-	recaptcha_server_form = `https://www.google.com/recaptcha/api/challenge`
-	pageTop               = `<!DOCTYPE HTML><html><head>
+	pageTop = `<!DOCTYPE HTML><html><head>
 <style>.error{color:#ff0000;} .ack{color:#0000ff;}</style></head><title>Recaptcha Test</title>
 <body><h3>Recaptcha Test</h3>
 <p>This is a test form for the go-recaptcha package</p>`
 	form = `<form action="/" method="POST">
-    	<script src="%s?k=%s" type="text/javascript"> </script>
-    	<input type="submit" name="button" value="Ok">
+	<script src='https://www.google.com/recaptcha/api.js'></script>
+	<div class="g-recaptcha" data-sitekey="%s"></div>
+	<input type="submit" name="button" value="Ok">
 </form>`
 	pageBottom = `</body></html>`
 	anError    = `<p class="error">%s</p>`
 	anAck      = `<p class="ack">%s</p>`
 )
 
-// processRequest accepts the http.Request object, finds the reCaptcha form variables which 
+// processRequest accepts the http.Request object, finds the reCaptcha form variables which
 // were input and sent by HTTP POST to the server, then calls the recaptcha package's Confirm()
 // method, which returns a boolean indicating whether or not the client answered the form correctly.
 func processRequest(request *http.Request) (result bool) {
 	result = false
-	challenge, challenge_found := request.Form["recaptcha_challenge_field"]
-	recaptcha_resp, resp_found := request.Form["recaptcha_response_field"]
+	recaptcha_resp, resp_found := request.Form["g-recaptcha-response"]
 	if challenge_found && resp_found {
-		result = recaptcha.Confirm("127.0.0.1", challenge[0], recaptcha_resp[0])
+		result = recaptcha.Confirm("127.0.0.1", recaptcha_resp[0])
 	}
 	return
 }
 
 // homePage is a simple HTTP handler which produces a basic HTML page
-// (as defined by the pageTop and pageBottom constants), including 
+// (as defined by the pageTop and pageBottom constants), including
 // an input form with a reCaptcha challenge.
 // If the http.Request object indicates the form input has been posted,
 // it calls processRequest() and displays a message indicating whether or not
@@ -67,7 +66,7 @@ func homePage(writer http.ResponseWriter, request *http.Request) {
 			}
 		}
 	}
-	fmt.Fprint(writer, fmt.Sprintf(form, recaptcha_server_form, recaptcha_public_key))
+	fmt.Fprint(writer, fmt.Sprintf(form, recaptcha_public_key))
 	fmt.Fprint(writer, pageBottom)
 }
 

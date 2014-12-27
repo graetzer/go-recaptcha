@@ -17,17 +17,16 @@ import (
 // https://www.google.com/recaptcha/api/siteverify?secret=your_secret&response=response_string&remoteip=user_ip_address
 const recaptcha_server_name = "https://www.google.com/recaptcha/api/siteverify?"
 
-var recaptcha_private_key string
+var recaptcha_secret string
 
-// check uses the client ip address, the challenge code from the reCaptcha form,
-// and the client's response input to that challenge to determine whether or not
+// check uses the client ip address and the client's response input to determine whether or not
 // the client answered the reCaptcha input question correctly.
 // It returns a boolean value indicating whether or not the client answered correctly.
 func check(remoteip, response string) (body []byte) {
-	vals := url.Values{"secret": recaptcha_private_key, "remoteip": remoteip, "response": response}
+	vals := url.Values{"secret": recaptcha_secret, "remoteip": remoteip, "response": response}
 	resp, err := http.Get(recaptcha_server_name + vals.Encode())
 	if err != nil {
-		log.Println("Post error: %s", err)
+		log.Println("Get error: %s", err)
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
@@ -59,7 +58,7 @@ func Confirm(remoteip, response string) bool {
 }
 
 // Init allows the webserver or code evaluating the reCaptcha form input to set the
-// reCaptcha private key (string) value, which will be different for every domain.
-func Init(key string) {
-	recaptcha_private_key = key
+// reCaptcha secret (string) value.
+func Init(secret string) {
+	recaptcha_secret = secret
 }
