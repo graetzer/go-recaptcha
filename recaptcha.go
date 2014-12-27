@@ -15,7 +15,7 @@ import (
 )
 
 // https://www.google.com/recaptcha/api/siteverify?secret=your_secret&response=response_string&remoteip=user_ip_address
-const recaptcha_server_name = "https://www.google.com/recaptcha/api/siteverify?"
+const recaptcha_url = "https://www.google.com/recaptcha/api/siteverify?"
 
 var recaptcha_secret string
 
@@ -23,22 +23,17 @@ var recaptcha_secret string
 // the client answered the reCaptcha input question correctly.
 // It returns a boolean value indicating whether or not the client answered correctly.
 func check(remoteip, response string) (body []byte) {
-	vals := url.Values{"secret": recaptcha_secret, "remoteip": remoteip, "response": response}
-	resp, err := http.Get(recaptcha_server_name + vals.Encode())
+	vals := url.Values{"secret": {recaptcha_secret}, "remoteip": {remoteip}, "response": {response}}
+	resp, err := http.Get(recaptcha_url + vals.Encode())
 	if err != nil {
 		log.Println("Get error: %s", err)
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Println("Read error: could not read body: %s", err)
 	}
 	return
-}
-
-type recaptcha_api_response struct {
-	success bool
-	errors  []string `json:"error-codes"`
 }
 
 // Confirm is the public interface function.
@@ -47,14 +42,15 @@ type recaptcha_api_response struct {
 // the client answered the reCaptcha input question correctly.
 // It returns a boolean value indicating whether or not the client answered correctly.
 func Confirm(remoteip, response string) bool {
-	var r recaptcha_api_response
-	if err := json.Unmarshal(check(remoteip, response), &r); err != nil {
+	var v map[string]interface{}
+	if err := json.Unmarshal(check(remoteip, response), &v); err != nil {
 		log.Println("JSON error:", err)
 	}
-	if len(r.errors) > 0 {
-		log.Println("Recaptcha errors:", r.errors)
+	if errors, found := v["error-codes"]; found {
+		log.Println("Recaptcha errors:", errors)
 	}
-	return r.success
+	success, ok := v["success"].(bool)
+	return ok && success
 }
 
 // Init allows the webserver or code evaluating the reCaptcha form input to set the

@@ -37,9 +37,8 @@ const (
 // method, which returns a boolean indicating whether or not the client answered the form correctly.
 func processRequest(request *http.Request) (result bool) {
 	result = false
-	recaptcha_resp, resp_found := request.Form["g-recaptcha-response"]
-	if challenge_found && resp_found {
-		result = recaptcha.Confirm("127.0.0.1", recaptcha_resp[0])
+	if response, found := request.Form["g-recaptcha-response"]; found {
+		result = recaptcha.Confirm("127.0.0.1", response[0])
 	}
 	return
 }
@@ -76,12 +75,13 @@ func homePage(writer http.ResponseWriter, request *http.Request) {
 // input if the form is posted.
 func main() {
 	if len(os.Args) != 3 {
-		fmt.Printf("usage: %s <reCaptcha public key> <reCaptcha private key>\n", filepath.Base(os.Args[0]))
+		fmt.Printf("usage: %s <reCaptcha site key> <reCaptcha secret key>\n", filepath.Base(os.Args[0]))
 		os.Exit(1)
 	} else {
 		recaptcha_public_key = os.Args[1]
 		recaptcha.Init(os.Args[2])
 
+		fmt.Println("Starting server on port 9001")
 		http.HandleFunc("/", homePage)
 		if err := http.ListenAndServe(":9001", nil); err != nil {
 			log.Fatal("failed to start server", err)
