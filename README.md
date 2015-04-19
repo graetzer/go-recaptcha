@@ -12,10 +12,10 @@ Usage
 Install the package in your environment:
 
 ```
-go get github.com/dpapathanasiou/go-recaptcha
+go get -u github.com/graetzer/go-recaptcha
 ```
 
-To use it within your own code, import "github.com/dpapathanasiou/go-recaptcha" and call:
+To use it within your own code, import "github.com/graetzer/go-recaptcha" and call:
 
 ```
 recaptcha.Init (recaptcha_private_key)
@@ -24,10 +24,10 @@ recaptcha.Init (recaptcha_private_key)
 once, to set the reCaptcha private key for your domain, then:
 
 ```
-recaptcha.Confirm (client_ip_address, recaptcha_challenge_field, recaptcha_response_field)
+recaptcha.Confirm (client_ip_address, g_recaptcha_response_field)
 ```
 
-for each reCaptcha form input you need to check, using the values obtained by reading the form's POST parameters.
+for each reCaptcha form input you need to check, using the ```g-recaptcha-response``` value obtained by reading the form's POST parameter.
 
 The recaptcha.Confirm() function returns either true (i.e., the captcha was completed correctly) or false.
 
@@ -49,4 +49,3 @@ Run the server by invoking the executable:
 ```
 
 You can access the page from http://localhost:9001/ in your browser.
-
